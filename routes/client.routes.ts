@@ -9,6 +9,9 @@ import {
 import { auth } from "../middleware/auth.js";
 
 const router = Router();
+router.use(auth);
+
+router.get("/auth", (_req: any, res: any) => res.sendStatus(200));
 
 router.get(
   "/inbounds",
@@ -37,7 +40,6 @@ router.get(
 
 router.post(
   "/clients",
-  auth,
   asyncHandler(async (req: any, res: any) => {
     const result = await createClient(req.body.email, req.body.plan);
     return res.status(201).json(result);

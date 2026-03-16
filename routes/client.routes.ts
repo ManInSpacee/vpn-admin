@@ -6,6 +6,7 @@ import {
   createClient,
   fetchFormattedClients,
 } from "../services/xui.service.js";
+import { auth } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -36,6 +37,7 @@ router.get(
 
 router.post(
   "/clients",
+  auth,
   asyncHandler(async (req: any, res: any) => {
     const result = await createClient(req.body.email, req.body.plan);
     return res.status(201).json(result);

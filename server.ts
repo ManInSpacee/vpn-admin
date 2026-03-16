@@ -2,8 +2,10 @@ import "dotenv/config";
 import express from "express";
 import { login } from "./services/xui.service.js";
 import clientRouter from "./routes/client.routes.js";
+import cors from "cors";
 
 const app = express();
+app.use(cors({ origin: process.env.CORS_ORIGIN }));
 app.use(express.json());
 app.use(clientRouter);
 app.use((err: any, req: any, res: any, next: any) => {

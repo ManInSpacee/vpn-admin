@@ -5,7 +5,8 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
 }
 
-function getDays(plan: string): number {
+function getDays(plan: string): number | null {
+  if (plan === "unlimited") return null;
   if (plan === "1m") return 30;
   if (plan === "3m") return 90;
   if (plan === "12m") return 360;

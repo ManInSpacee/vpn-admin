@@ -30,17 +30,21 @@ async function fetchAllClients() {
 }
 
 async function fetchFormattedClients() {
-  return (await fetchAllClients()).map((client: any) => ({
+  const { data } = await api.get("/panel/api/inbounds/list");
+  const inbound = data.obj.find((i: any) => i.id === 9);
+  if (!inbound) return [];
+  return inbound.clientStats.map((client: any) => ({
     email: client.email,
-    inbound: client.inbound,
     enable: client.enable,
+    expiryTime: client.expiryTime,
     upMb: formatBytes(client.up),
     downMb: formatBytes(client.down),
   }));
 }
 
 async function createClient(email: string, plan: string) {
-  const expiryTime = Date.now() + getDays(plan) * 24 * 60 * 60 * 1000;
+  const days = getDays(plan);
+  const expiryTime = days === null ? 0 : Date.now() + days * 24 * 60 * 60 * 1000;
   const uuid = crypto.randomUUID();
   const subId = crypto.randomUUID().replaceAll("-", "").slice(0, 16);
   const client = {

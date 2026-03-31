@@ -51,8 +51,8 @@ import { prisma } from "../lib/prisma.js";
 
 const userPlan = await prisma.userPlan.create({
   data: {
-    userId: "вставить свой",
-    planId: "вставить свой",
+    userId: "eeb40123-af93-4676-8f73-4f8d831010d5",
+    planId: "152602a1-da65-4454-86d8-352499dbcf88",
     startsAt: new Date(),
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     active: true,
@@ -60,5 +60,5 @@ const userPlan = await prisma.userPlan.create({
   },
 });
 
-console.log("Seeded:", { userPlan });
+// console.log("Seeded:", { userPlan });
 await prisma.$disconnect();

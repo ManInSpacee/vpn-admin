@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone:*)",
+      "Bash(cp -r c:/Users/pale_avenger/Documents/VPN/backend-clone/. c:/Users/pale_avenger/Documents/VPN/backend/)",
+      "Bash(rm -rf c:/Users/pale_avenger/Documents/VPN/backend-clone)",
+      "Bash(npm install:*)",
+      "Bash(ls c:/Users/pale_avenger/Documents/VPN/backend/.env*)"
+    ]
+  }
+}

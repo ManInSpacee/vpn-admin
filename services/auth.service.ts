@@ -35,6 +35,22 @@ export async function loginUser(email: string, password: string) {
   return { accessToken, refreshToken };
 }
 
+export async function changePassword(
+  userId: string,
+  oldPassword: string,
+  newPassword: string,
+) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("User not found");
+  if (!(await bcrypt.compare(oldPassword, user.password_hash)))
+    throw new Error("Invalid current password");
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password_hash: newHash },
+  });
+}
+
 export async function refreshTokens(refreshToken: string) {
   try {
     const decoded = jwt.verify(

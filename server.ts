@@ -13,8 +13,8 @@ app.use(cors({ origin: process.env.CORS_ORIGIN }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(subRouter);
-app.use(clientRouter);
 app.use(authRouter);
+//app.use(clientRouter);
 app.use(userRouter);
 app.use((err: any, req: any, res: any, next: any) => {
   console.error(err);

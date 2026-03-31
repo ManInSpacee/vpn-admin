@@ -8,19 +8,19 @@ import {
 } from "../services/xui.service.js";
 import { auth } from "../middleware/auth.js";
 
-const router = Router();
-router.use(auth);
+const clientRouter = Router();
+clientRouter.use(auth);
 
-router.get("/auth", (_req: any, res: any) => res.sendStatus(200));
+clientRouter.get("/auth", (_req: any, res: any) => res.sendStatus(200));
 
-router.get(
+clientRouter.get(
   "/inbounds",
   asyncHandler(async (_req: any, res: any) => {
     res.json(await fetchInbounds());
   }),
 );
 
-router.get(
+clientRouter.get(
   "/clients",
   asyncHandler(async (_req: any, res: any) => {
     const clients = await fetchFormattedClients();
@@ -28,7 +28,7 @@ router.get(
   }),
 );
 
-router.get(
+clientRouter.get(
   "/clients/:email",
   asyncHandler(async (req: any, res: any) => {
     const clients = await fetchAllClients();
@@ -38,7 +38,7 @@ router.get(
   }),
 );
 
-router.post(
+clientRouter.post(
   "/clients",
   asyncHandler(async (req: any, res: any) => {
     const result = await createClient(req.body.email, req.body.plan);
@@ -46,4 +46,4 @@ router.post(
   }),
 );
 
-export default router;
+export default clientRouter;

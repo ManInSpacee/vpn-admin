@@ -1,7 +1,13 @@
 import "dotenv/config";
 import https from "node:https";
 import axios from "axios";
-import { getDays, formatBytes } from "../utils/helpers.js";
+import { formatBytes } from "../utils/helpers.js";
+
+export type XuiServer = {
+  xuiUrl: string;
+  xuiUsername: string;
+  xuiPassword: string;
+};
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 const api = axios.create({ baseURL: process.env["XUI_URL"], httpsAgent });
@@ -16,6 +22,17 @@ async function login() {
   if (setCookie) {
     api.defaults.headers.Cookie = setCookie.split(";")[0];
   }
+}
+
+async function createServerApi(server: XuiServer) {
+  const serverApi = axios.create({ baseURL: server.xuiUrl, httpsAgent });
+  const loginRes = await serverApi.post("/login", {
+    username: server.xuiUsername,
+    password: server.xuiPassword,
+  });
+  const cookie = loginRes.headers["set-cookie"]?.[0]?.split(";")[0];
+  if (cookie) serverApi.defaults.headers.Cookie = cookie;
+  return serverApi;
 }
 
 async function fetchAllClients() {
@@ -42,13 +59,18 @@ async function fetchFormattedClients() {
   }));
 }
 
-async function createClient(email: string, plan: string) {
-  const days = getDays(plan);
-  const expiryTime = days === null ? 0 : Date.now() + days * 24 * 60 * 60 * 1000;
-  const uuid = crypto.randomUUID();
+async function createClient(
+  email: string,
+  plan: number,
+  server: XuiServer,
+  inboundId: number,
+) {
+  const serverApi = await createServerApi(server);
+  const expiryTime = Date.now() + plan * 24 * 60 * 60 * 1000;
+  const clientUuid = crypto.randomUUID();
   const subId = crypto.randomUUID().replaceAll("-", "").slice(0, 16);
   const client = {
-    id: uuid,
+    id: clientUuid,
     email,
     enable: true,
     expiryTime,
@@ -61,15 +83,27 @@ async function createClient(email: string, plan: string) {
     comment: "",
   };
 
-  await api.post("/panel/api/inbounds/addClient", {
-    id: 9,
+  await serverApi.post("/panel/api/inbounds/addClient", {
+    id: inboundId,
     settings: JSON.stringify({ clients: [client] }),
   });
   return {
     email,
     plan,
-    subscriptionUrl: `${process.env.XUI_SUB_URL}/sub/${subId}`,
+    subId,
+    clientUuid,
   };
+}
+
+async function deleteClient(
+  server: XuiServer,
+  clientUuid: string,
+  inboundId: number,
+) {
+  const serverApi = createServerApi(server);
+  await (
+    await serverApi
+  ).post(`/panel/api/inbounds/${inboundId}/delClient/${clientUuid}`);
 }
 
 async function fetchInbounds() {
@@ -83,4 +117,5 @@ export {
   createClient,
   fetchInbounds,
   fetchFormattedClients,
+  deleteClient,
 };

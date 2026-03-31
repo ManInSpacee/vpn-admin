@@ -12,6 +12,7 @@ export async function getMe(userId: string) {
       userPlans: {
         where: { active: true },
         take: 1,
+        include: { plan: true },
       },
     },
   });
@@ -123,7 +124,11 @@ export async function getSubscription(token: string) {
       },
     );
     const decoded = Buffer.from(subLink.data, "base64").toString("utf-8");
-    const lines = decoded.split("\n").filter(Boolean);
+    const lines = decoded.split("\n").filter(Boolean).map((line) => {
+      const hashIndex = line.lastIndexOf("#");
+      if (hashIndex === -1) return line + "#" + encodeURIComponent(link.server.name);
+      return line.substring(0, hashIndex + 1) + encodeURIComponent(link.server.name);
+    });
     links.push(...lines);
   }
   const finalLink = Buffer.from(links.join("\n")).toString("base64");

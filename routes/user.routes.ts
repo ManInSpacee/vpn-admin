@@ -16,7 +16,14 @@ userRouter.get(
   "/me",
   asyncHandler(async (req: any, res: any) => {
     const user = await getMe(req.userId);
-    res.status(200).json({ email: user?.email, createdAt: user?.createdAt });
+    const activePlan = user?.userPlans[0];
+    res.status(200).json({
+      email: user?.email,
+      createdAt: user?.createdAt,
+      plan: activePlan
+        ? { name: activePlan.plan.name, expiresAt: activePlan.expiresAt }
+        : null,
+    });
   }),
 );
 

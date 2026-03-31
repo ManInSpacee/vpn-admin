@@ -3,7 +3,6 @@ import { asyncHandler } from "../utils/helpers.js";
 import {
   fetchAllClients,
   fetchInbounds,
-  createClient,
   fetchFormattedClients,
 } from "../services/xui.service.js";
 import { auth } from "../middleware/auth.js";
@@ -40,9 +39,8 @@ clientRouter.get(
 
 clientRouter.post(
   "/clients",
-  asyncHandler(async (req: any, res: any) => {
-    const result = await createClient(req.body.email, req.body.plan);
-    return res.status(201).json(result);
+  asyncHandler(async (_req: any, res: any) => {
+    res.status(410).json({ error: "Deprecated. Use POST /profiles instead." });
   }),
 );
 

@@ -257,7 +257,7 @@ DATABASE_URL=postgresql://... # Подключение к PostgreSQL
 
 ---
 
-## 13. Что сделано (по состоянию на 2026-03-31)
+## 13. Что сделано (по состоянию на 2026-04-01)
 
 - [x] Схема БД в Prisma (все модели)
 - [x] Регистрация/логин (JWT + bcrypt + httpOnly куки)
@@ -265,13 +265,15 @@ DATABASE_URL=postgresql://... # Подключение к PostgreSQL
 - [x] Агрегатор подписок /sub/:token
 - [x] Два сервера (NL + DE) подключены и работают
 - [x] Админка (базовая): авторизация, список клиентов, создание
+- [x] PUT /me/password -- смена пароля (с проверкой старого)
+- [x] GET /me -- возвращает email, createdAt, plan { name, expiresAt } или null
+- [x] Красивые названия серверов в VLESS ссылках (из Server.name)
 
 ## 14. Что осталось
 
 ### Бэкенд (ближайшее)
-- [ ] PUT /me/password -- смена пароля
-- [ ] GET /me -- добавить тариф и дату окончания подписки
-- [ ] Красивые названия серверов в VLESS ссылках (из Server.name)
+- [ ] Интеграция FreeKassa (платёжная система)
+- [ ] Фронт ЛК
 
 ### Фронт ЛК (следующий этап)
 - [ ] React + Tailwind, бруталист/терминал стиль
@@ -292,7 +294,88 @@ DATABASE_URL=postgresql://... # Подключение к PostgreSQL
 
 ---
 
-## 15. Для напарника (AWG-агент)
+## 15. Интеграция FreeKassa (платёжная система)
+
+**Провайдер:** FreeKassa (freekassa.net), интеграция через API (не SCI)
+**API base URL:** `https://api.fk.life/v1/`
+**Документация:** https://docs.freekassa.net
+
+### Нужные данные от Льва (после регистрации в FreeKassa)
+- `FREEKASSA_API_KEY` -- API ключ из настроек ЛК
+- `FREEKASSA_SHOP_ID` -- ID магазина
+- `FREEKASSA_SECRET` -- секретное слово для проверки подписи вебхука
+
+### Два эндпоинта
+
+#### POST /payment/create (защищён JWT)
+Создаёт заказ в FreeKassa, возвращает ссылку на оплату.
+
+**Логика:**
+1. Берём `userId` из JWT (`req.userId`)
+2. Берём активный план из БД (или принимаем `planId` в body)
+3. POST `https://api.fk.life/v1/orders/create` с параметрами:
+   - `shopId` -- ID магазина
+   - `nonce` -- уникальный идентификатор заказа (UUID)
+   - `paymentId` -- наш внутренний ID (UUID, сохраняем в Payment)
+   - `i` -- способ оплаты (44 = СБП/QR)
+   - `email` -- email пользователя из БД
+   - `ip` -- реальный IP клиента из `req.ip`
+   - `amount` -- сумма (plan.price)
+   - `currency` -- RUB
+   - `signature` -- подпись запроса (см. ниже)
+4. Создаём запись `Payment` в БД со статусом `pending`
+5. Возвращаем `{ url }` -- ссылку из поля `Location` ответа FreeKassa
+
+**Подпись запроса:** MD5 или SHA256 от конкатенации полей (см. доку раздел 1.7)
+
+**Body запроса:**
+```json
+{ "planId": "uuid" }
+```
+
+**Ответ:**
+```json
+{ "url": "https://pay.freekassa.net/..." }
+```
+
+#### POST /payment/webhook (публичный, без авторизации)
+FreeKassa вызывает этот эндпоинт после успешной оплаты.
+
+**Логика:**
+1. Проверяем подпись из тела запроса (FREEKASSA_SECRET)
+2. Находим `Payment` по `paymentId` (наш внутренний ID)
+3. Если статус уже `paid` -- игнорируем (идемпотентность)
+4. Обновляем `Payment.status = paid`
+5. Создаём `UserPlan` для пользователя:
+   - `userId` из Payment
+   - `planId` из Payment
+   - `startsAt = now()`
+   - `expiresAt = now() + plan.duration days`
+   - `active = true`
+6. Возвращаем `200 OK` (FreeKassa ждёт именно 200, иначе будет повторять)
+
+**ВАЖНО:** URL вебхука прописывается в настройках FreeKassa: `https://твой-сервер/payment/webhook`
+
+### Переменные окружения (добавить в .env)
+```
+FREEKASSA_API_KEY=...
+FREEKASSA_SHOP_ID=...
+FREEKASSA_SECRET=...
+```
+
+### Файловая структура
+```
+routes/payment.routes.ts     -- POST /payment/create, POST /payment/webhook
+services/payment.service.ts  -- логика создания заказа и обработки вебхука
+```
+
+### Статус
+- [ ] Ждём данные от Льва (API ключ, shop ID, секрет)
+- [ ] Реализация после получения данных
+
+---
+
+## 17. Для напарника (AWG-агент)
 
 ### Что нужно от агента
 HTTP-сервис на каждом сервере с AmneziaWG. Единый интерфейс:
@@ -332,7 +415,7 @@ GET    /stats           -- статистика (rx/tx по peer)
 
 ---
 
-## 16. Известные проблемы и нюансы
+## 18. Известные проблемы и нюансы
 
 1. **Self-signed сертификаты** -- все запросы к x-ui3 через `httpsAgent` с `rejectUnauthorized: false`
 2. **Старый API в xui.service.ts** -- `login()`, `fetchAllClients()`, `fetchFormattedClients()` используют глобальный `api` инстанс с env переменными (XUI_URL). Это для админки и работает только с одним сервером. Новый код (createClient, deleteClient) использует `createServerApi()` с данными из БД.
@@ -344,7 +427,7 @@ GET    /stats           -- статистика (rx/tx по peer)
 
 ---
 
-## 17. Запуск проекта локально
+## 19. Запуск проекта локально
 
 ```bash
 # PostgreSQL через Docker

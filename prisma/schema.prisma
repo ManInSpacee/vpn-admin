@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String       @id @default(uuid())
+  email          String       @unique
+  password_hash  String
+  telegramId     BigInt?      @unique
+  location       String?
+  registrationIp String?
+  referral       String?
+  isFreeClaimed  Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  userPlans      UserPlan[]
+  profiles       VpnProfile[]
+  payments       Payment[]
+}
+
+model UserPlan {
+  id        String       @id @default(uuid())
+  user      User         @relation(fields: [userId], references: [id])
+  userId    String
+  plan      Plan         @relation(fields: [planId], references: [id])
+  planId    String
+  startsAt  DateTime
+  expiresAt DateTime
+  active    Boolean      @default(true)
+  autoRenew Boolean      @default(true)
+  profiles  VpnProfile[]
+  payments  Payment[]
+}
+
+model Server {
+  id          String              @id @default(uuid())
+  name        String
+  country     String
+  host        String
+  type        ServerType
+  xuiSubUrl   String?
+  xuiUrl      String?
+  xuiUsername String?
+  xuiPassword String?
+  agentUrl    String?
+  agentKey    String?
+  inboundId   Int?
+  maxClients  Int
+  active      Boolean             @default(true)
+  profiles    VpnProfile[]
+  serverLinks ProfileServerLink[]
+  stats       ProfileStat[]
+}
+
+model VpnProfile {
+  id                String              @id @default(uuid())
+  user              User                @relation(fields: [userId], references: [id])
+  userId            String
+  userPlan          UserPlan            @relation(fields: [userPlanId], references: [id])
+  userPlanId        String
+  slotNumber        Int
+  protocol          Protocol
+  server            Server?             @relation(fields: [serverId], references: [id])
+  serverId          String?
+  config            String?
+  subscriptionToken String?
+  expiresAt         DateTime
+  serverLinks       ProfileServerLink[]
+  stats             ProfileStat[]
+}
+
+model ProfileServerLink {
+  id        String     @id @default(uuid())
+  profile   VpnProfile @relation(fields: [profileId], references: [id])
+  profileId String
+  server    Server     @relation(fields: [serverId], references: [id])
+  serverId  String
+  subId     String
+  remoteId  String
+}
+
+model ProfileStat {
+  id         String     @id @default(uuid())
+  profile    VpnProfile @relation(fields: [profileId], references: [id])
+  profileId  String
+  server     Server?    @relation(fields: [serverId], references: [id])
+  serverId   String?
+  recordedAt DateTime   @default(now())
+  rxBytes    BigInt     @default(0)
+  txBytes    BigInt     @default(0)
+}
+
+model Payment {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  userPlan   UserPlan @relation(fields: [userPlanId], references: [id])
+  userPlanId String
+  amount     Int
+  status     String
+  provider   String
+  providerId String?
+  createdAt  DateTime @default(now())
+}
+
+model Plan {
+  id        String     @id @default(uuid())
+  name      String
+  duration  Int
+  price     Int
+  slots     Int
+  active    Boolean    @default(true)
+  userPlans UserPlan[]
+}
+
+enum ServerType {
+  xui
+  awg
+  both
+}
+
+enum Protocol {
+  vless
+  awg
+}

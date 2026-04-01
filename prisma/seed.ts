@@ -49,16 +49,16 @@ import { prisma } from "../lib/prisma.js";
 // JWT_ACCESS_SECRET=181f4fa691f5445e55987dd42041413a46eae8e48088360667393ad2ba1476c568da333d7c2f6a7c407101acaadb70a75d36084109abd682471d3e76d9c0e3ef
 // JWT_REFRESH_SECRET=60a5eb55e9815349d8ed127398d69674398b80188d004fed4e1a4bc131f61aa5c3b2fc39f6a74a6dac82c77cf20298cd5dd4096f5aa96f440c44af0a22d2a8a9
 
-const userPlan = await prisma.userPlan.create({
-  data: {
-    userId: "eeb40123-af93-4676-8f73-4f8d831010d5",
-    planId: "152602a1-da65-4454-86d8-352499dbcf88",
-    startsAt: new Date(),
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    active: true,
-    autoRenew: true,
-  },
-});
+// const userPlan = await prisma.userPlan.create({
+//   data: {
+//     userId: "вставить свой",
+//     planId: "вставить свой",
+//     startsAt: new Date(),
+//     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+//     active: true,
+//     autoRenew: true,
+//   },
+// });
 
 // console.log("Seeded:", { userPlan });
-await prisma.$disconnect();
+// await prisma.$disconnect();

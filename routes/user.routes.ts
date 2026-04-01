@@ -56,7 +56,7 @@ userRouter.put(
   asyncHandler(async (req: any, res: any) => {
     const { oldPassword, newPassword } = req.body;
     if (!oldPassword || !newPassword)
-      return res.status(400).json({ error: "oldPassword and newPassword are required" });
+      return res.status(400).json({ error: "old password and new Password are required" });
     await changePassword(req.userId, oldPassword, newPassword);
     res.status(200).json({ ok: true });
   }),

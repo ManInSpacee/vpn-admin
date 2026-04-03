@@ -25,6 +25,7 @@ model User {
   userPlans      UserPlan[]
   profiles       VpnProfile[]
   payments       Payment[]
+  role           UserRole     @default(user)
 }
 
 model UserPlan {
@@ -131,4 +132,9 @@ enum ServerType {
 enum Protocol {
   vless
   awg
+}
+
+enum UserRole {
+  user
+  admin
 }

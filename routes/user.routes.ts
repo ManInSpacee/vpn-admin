@@ -21,7 +21,7 @@ userRouter.get(
       email: user?.email,
       createdAt: user?.createdAt,
       plan: activePlan
-        ? { name: activePlan.plan.name, expiresAt: activePlan.expiresAt }
+        ? { active: activePlan.plan.active, expiresAt: activePlan.expiresAt }
         : null,
     });
   }),
@@ -38,7 +38,7 @@ userRouter.get(
 userRouter.post(
   "/profiles",
   asyncHandler(async (req: any, res: any) => {
-    const profile = await createProfile(req.userId);
+    const profile = await createProfile(req.userId, req.body.name);
     res.status(201).json({ profile });
   }),
 );
@@ -56,7 +56,9 @@ userRouter.put(
   asyncHandler(async (req: any, res: any) => {
     const { oldPassword, newPassword } = req.body;
     if (!oldPassword || !newPassword)
-      return res.status(400).json({ error: "old password and new Password are required" });
+      return res
+        .status(400)
+        .json({ error: "old password and new Password are required" });
     await changePassword(req.userId, oldPassword, newPassword);
     res.status(200).json({ ok: true });
   }),

@@ -26,7 +26,7 @@ export async function getProfiles(userId: string) {
   return profiles;
 }
 
-export async function createProfile(userId: string) {
+export async function createProfile(userId: string, name: string) {
   const userPlan = await prisma.userPlan.findFirst({
     where: { userId, active: true },
     include: { plan: true },
@@ -38,7 +38,7 @@ export async function createProfile(userId: string) {
   });
 
   if (profileCount >= userPlan.plan.slots)
-    throw new Error("No slots avaliable");
+    throw new Error("Достигнуто максимальное количество слотов: 5");
   const servers = await prisma.server.findMany({
     where: { active: true, type: "xui" },
   });
@@ -48,6 +48,7 @@ export async function createProfile(userId: string) {
   const profile = await prisma.vpnProfile.create({
     data: {
       userId,
+      name,
       userPlanId: userPlan.id,
       slotNumber: profileCount + 1,
       protocol: "vless",
@@ -124,11 +125,18 @@ export async function getSubscription(token: string) {
       },
     );
     const decoded = Buffer.from(subLink.data, "base64").toString("utf-8");
-    const lines = decoded.split("\n").filter(Boolean).map((line) => {
-      const hashIndex = line.lastIndexOf("#");
-      if (hashIndex === -1) return line + "#" + encodeURIComponent(link.server.name);
-      return line.substring(0, hashIndex + 1) + encodeURIComponent(link.server.name);
-    });
+    const lines = decoded
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const hashIndex = line.lastIndexOf("#");
+        if (hashIndex === -1)
+          return line + "#" + encodeURIComponent(link.server.name);
+        return (
+          line.substring(0, hashIndex + 1) +
+          encodeURIComponent(link.server.name)
+        );
+      });
     links.push(...lines);
   }
   const finalLink = Buffer.from(links.join("\n")).toString("base64");

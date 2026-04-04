@@ -17,10 +17,14 @@ export async function loginUser(email: string, password: string) {
   const currentUser = await prisma.user.findUnique({
     where: { email },
   });
-  if (!currentUser) throw new Error("User not found");
-  if (!password) throw new Error("Enter a password");
+  if (!currentUser) {
+    const err: any = new Error("Пользователь не найден");
+    err.status = 401;
+    throw err;
+  }
+  if (!password) throw new Error("Введите пароль");
   if (!(await bcrypt.compare(password, currentUser.password_hash)))
-    throw new Error("Invalid password");
+    throw new Error("Неправильный пароль!");
   const accessToken = jwt.sign(
     { userId: currentUser.id },
     process.env.JWT_ACCESS_SECRET!,
@@ -65,6 +69,8 @@ export async function refreshTokens(refreshToken: string) {
     );
     return { newAccessToken };
   } catch {
-    throw new Error("Invalid refresh token");
+    const err: any = new Error("Invalid refresh token");
+    err.status = 401;
+    throw err;
   }
 }

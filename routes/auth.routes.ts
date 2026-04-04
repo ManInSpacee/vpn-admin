@@ -9,7 +9,7 @@ import { asyncHandler } from "../utils/helpers.js";
 const authRouter = Router();
 
 authRouter.post(
-  "/register",
+  "/auth/register",
   asyncHandler(async (req: any, res: any) => {
     const user = await registerUser(req.body.email, req.body.password);
     res.status(201).json({ user });
@@ -17,7 +17,7 @@ authRouter.post(
 );
 
 authRouter.post(
-  "/login",
+  "/auth/login",
   asyncHandler(async (req: any, res: any) => {
     const { accessToken, refreshToken } = await loginUser(
       req.body.email,
@@ -39,7 +39,7 @@ authRouter.post(
 );
 
 authRouter.post(
-  "/refresh",
+  "/auth/refresh",
   asyncHandler(async (req: any, res: any) => {
     const token = req.cookies.refreshToken;
     const { newAccessToken } = await refreshTokens(token);
@@ -54,7 +54,7 @@ authRouter.post(
 );
 
 authRouter.post(
-  "/logout",
+  "/auth/logout",
   asyncHandler(async (req: any, res: any) => {
     res.cookie("accessToken", "", { httpOnly: true, maxAge: 0 });
     res.cookie("refreshToken", "", { httpOnly: true, maxAge: 0 });

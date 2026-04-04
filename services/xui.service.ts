@@ -13,7 +13,7 @@ const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 const api = axios.create({ baseURL: process.env["XUI_URL"], httpsAgent });
 
 async function login() {
-  const res = await api.post("/login", {
+  const res = await api.post("/auth/login", {
     username: process.env["XUI_USERNAME"],
     password: process.env["XUI_PASSWORD"],
   });

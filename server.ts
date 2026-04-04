@@ -18,6 +18,7 @@ app.use(userRouter);
 app.use(adminRouter);
 app.use((err: any, req: any, res: any, next: any) => {
   const status = err.status || 500;
+  console.log(err.message);
   res.status(status).json({ error: err.message });
 });
 const PORT = 3000;

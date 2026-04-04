@@ -69,6 +69,8 @@ export async function refreshTokens(refreshToken: string) {
     );
     return { newAccessToken };
   } catch {
-    throw new Error("Invalid refresh token");
+    const err: any = new Error("Invalid refresh token");
+    err.status = 401;
+    throw err;
   }
 }

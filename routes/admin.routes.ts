@@ -3,6 +3,7 @@ import authJwt from "../middleware/authJwt.js";
 import requireAdmin from "../middleware/requireAdmin.js";
 import { prisma } from "../lib/prisma.js";
 import { asyncHandler } from "../utils/helpers.js";
+import { createClient, XuiServer } from "../services/xui.service.js";
 
 const adminRouter = Router();
 adminRouter.use(authJwt);
@@ -40,6 +41,41 @@ adminRouter.post(
         maxClients,
       },
     });
+
+    // Добавить ключи на новый сервер для всех существующих активных профилей
+    if (server.inboundId && server.type === "xui") {
+      const profiles = await prisma.vpnProfile.findMany({
+        include: {
+          user: true,
+          userPlan: { include: { plan: true } },
+        },
+      });
+
+      for (const profile of profiles) {
+        try {
+          const client = await createClient(
+            profile.user.email + "_" + profile.slotNumber,
+            profile.userPlan.plan.duration,
+            server as XuiServer,
+            server.inboundId,
+          );
+          await prisma.profileServerLink.create({
+            data: {
+              profileId: profile.id,
+              serverId: server.id,
+              subId: client.subId,
+              remoteId: client.clientUuid,
+            },
+          });
+        } catch (e) {
+          console.error(
+            `Failed to create client for profile ${profile.id}:`,
+            e,
+          );
+        }
+      }
+    }
+
     return res.status(201).json({ server });
   }),
 );

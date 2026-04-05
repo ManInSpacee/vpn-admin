@@ -66,14 +66,13 @@ async function createClient(
   inboundId: number,
 ) {
   const serverApi = await createServerApi(server);
-  const expiryTime = Date.now() + plan * 24 * 60 * 60 * 1000;
   const clientUuid = crypto.randomUUID();
   const subId = crypto.randomUUID().replaceAll("-", "").slice(0, 16);
   const client = {
     id: clientUuid,
     email,
     enable: true,
-    expiryTime,
+    expiryTime: 0,
     totalGB: 0,
     limitIp: 0,
     flow: "xtls-rprx-vision",

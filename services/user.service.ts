@@ -65,7 +65,7 @@ export async function createProfile(userId: string, name: string) {
   for (const server of servers) {
     if (!server.inboundId) continue;
     const client = await createClient(
-      user.email + "_" + (profileCount + 1),
+      "slot_" + (profileCount + 1),
       userPlan.plan.duration,
       server as XuiServer,
       server.inboundId,

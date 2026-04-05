@@ -46,7 +46,7 @@ adminRouter.post(
     if (server.inboundId && server.type === "xui") {
       const profiles = await prisma.vpnProfile.findMany({
         include: {
-          user: true,
+          user: { omit: { password_hash: true } },
           userPlan: { include: { plan: true } },
         },
       });
@@ -117,6 +117,7 @@ adminRouter.get(
     const userEmail = req.query.email;
     const user = await prisma.user.findUnique({
       where: { email: userEmail },
+      omit: { password_hash: true },
     });
     if (!user) return res.status(404).json({ error: "User not found" });
     return res.status(200).json({ user });

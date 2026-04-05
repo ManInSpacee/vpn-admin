@@ -8,11 +8,21 @@ const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      createdAt: true,
       userPlans: {
         where: { active: true },
         take: 1,
-        include: { plan: true },
+        select: {
+          id: true,
+          active: true,
+          startsAt: true,
+          expiresAt: true,
+          plan: true,
+        },
       },
     },
   });
@@ -33,39 +43,35 @@ export async function createProfile(userId: string, name: string) {
   });
 
   if (!userPlan) throw new Error("No active subscription");
-  const profileCount = await prisma.vpnProfile.count({
-    where: { userPlanId: userPlan.id },
-  });
-
-  if (profileCount >= userPlan.plan.slots)
-    throw new Error("Достигнуто максимальное количество слотов: 5");
   const servers = await prisma.server.findMany({
     where: { active: true, type: "xui" },
   });
   if (servers.length === 0) throw new Error("No servers avaliable!");
 
   const subscriptionToken = crypto.randomUUID();
-  const profile = await prisma.vpnProfile.create({
-    data: {
-      userId,
-      name,
-      userPlanId: userPlan.id,
-      slotNumber: profileCount + 1,
-      protocol: "vless",
-      subscriptionToken: subscriptionToken,
-      expiresAt: userPlan.expiresAt,
-    },
+  const profile = await prisma.$transaction(async (tx) => {
+    const profileCount = await tx.vpnProfile.count({
+      where: { userPlanId: userPlan.id },
+    });
+    if (profileCount >= userPlan.plan.slots)
+      throw new Error("Достигнуто максимальное количество слотов: 5");
+    return await tx.vpnProfile.create({
+      data: {
+        userId,
+        name,
+        userPlanId: userPlan.id,
+        slotNumber: profileCount + 1,
+        protocol: "vless",
+        subscriptionToken: subscriptionToken,
+        expiresAt: userPlan.expiresAt,
+      },
+    });
   });
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-  if (!user) throw new Error("User not found");
 
   for (const server of servers) {
     if (!server.inboundId) continue;
     const client = await createClient(
-      "slot_" + (profileCount + 1),
+      userId + "_" + profile.slotNumber,
       userPlan.plan.duration,
       server as XuiServer,
       server.inboundId,
@@ -99,7 +105,6 @@ export async function deleteProfile(userId: string, profileId: string) {
       link.remoteId,
       link.server.inboundId!,
     );
-  await prisma.profileServerLink.deleteMany({ where: { profileId } });
   await prisma.vpnProfile.delete({
     where: { id: profileId },
   });

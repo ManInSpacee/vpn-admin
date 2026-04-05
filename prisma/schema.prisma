@@ -40,6 +40,8 @@ model UserPlan {
   autoRenew Boolean      @default(true)
   profiles  VpnProfile[]
   payments  Payment[]
+
+  @@index([userId, active])
 }
 
 model Server {
@@ -60,6 +62,8 @@ model Server {
   profiles    VpnProfile[]
   serverLinks ProfileServerLink[]
   stats       ProfileStat[]
+
+  @@index([active])
 }
 
 model VpnProfile {
@@ -74,15 +78,17 @@ model VpnProfile {
   server            Server?             @relation(fields: [serverId], references: [id])
   serverId          String?
   config            String?
-  subscriptionToken String?
+  subscriptionToken String?             @unique
   expiresAt         DateTime
   serverLinks       ProfileServerLink[]
   stats             ProfileStat[]
+
+  @@index([userId])
 }
 
 model ProfileServerLink {
   id        String     @id @default(uuid())
-  profile   VpnProfile @relation(fields: [profileId], references: [id])
+  profile   VpnProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   profileId String
   server    Server     @relation(fields: [serverId], references: [id])
   serverId  String

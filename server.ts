@@ -8,12 +8,19 @@ import adminRouter from "./routes/admin.routes.js";
 import cors from "cors";
 
 const app = express();
+if (
+  !process.env.JWT_ACCESS_SECRET ||
+  !process.env.JWT_REFRESH_SECRET ||
+  !process.env.DATABASE_URL ||
+  !process.env.CORS_ORIGIN
+)
+  throw new Error("Check the env!");
+
 app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(subRouter);
 app.use(authRouter);
-//app.use(clientRouter);
 app.use(userRouter);
 app.use(adminRouter);
 app.use((err: any, req: any, res: any, next: any) => {

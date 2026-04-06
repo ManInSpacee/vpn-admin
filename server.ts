@@ -5,6 +5,7 @@ import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.routes.js";
 import subRouter from "./routes/sub.routes.js";
 import adminRouter from "./routes/admin.routes.js";
+import paymentRouter from "./routes/payment.routes.js";
 import cors from "cors";
 
 const app = express();
@@ -12,7 +13,9 @@ if (
   !process.env.JWT_ACCESS_SECRET ||
   !process.env.JWT_REFRESH_SECRET ||
   !process.env.DATABASE_URL ||
-  !process.env.CORS_ORIGIN
+  !process.env.CORS_ORIGIN ||
+  !process.env.HELEKET_MERCHANT_ID ||
+  !process.env.HELEKET_API_KEY
 )
   throw new Error("Check the env!");
 
@@ -23,6 +26,7 @@ app.use(subRouter);
 app.use(authRouter);
 app.use(userRouter);
 app.use(adminRouter);
+app.use(paymentRouter);
 app.use((err: any, req: any, res: any, next: any) => {
   const status = err.status || 500;
   if (status >= 500) console.error(err.message);

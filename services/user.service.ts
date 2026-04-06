@@ -37,6 +37,12 @@ export async function getProfiles(userId: string) {
 }
 
 export async function createProfile(userId: string, name: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  });
+  if (!user) throw new Error("User not found");
+
   const userPlan = await prisma.userPlan.findFirst({
     where: { userId, active: true },
     include: { plan: true },
@@ -71,7 +77,7 @@ export async function createProfile(userId: string, name: string) {
   for (const server of servers) {
     if (!server.inboundId) continue;
     const client = await createClient(
-      userId + "_" + profile.slotNumber,
+      user.email + "_" + profile.slotNumber,
       userPlan.plan.duration,
       server as XuiServer,
       server.inboundId,

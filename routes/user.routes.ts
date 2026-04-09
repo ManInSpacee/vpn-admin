@@ -8,6 +8,7 @@ import {
   getProfiles,
 } from "../services/user.service.js";
 import { changePassword } from "../services/auth.service.js";
+import { prisma } from "../lib/prisma.js";
 
 const userRouter = Router();
 userRouter.use(authJwt);
@@ -61,6 +62,14 @@ userRouter.put(
         .json({ error: "old password and new Password are required" });
     await changePassword(req.userId, oldPassword, newPassword);
     res.status(200).json({ ok: true });
+  }),
+);
+
+userRouter.get(
+  "/plans",
+  asyncHandler(async (_req: any, res: any) => {
+    const plans = await prisma.plan.findMany({ where: { active: true } });
+    res.status(200).json({ plans });
   }),
 );
 

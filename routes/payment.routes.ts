@@ -14,11 +14,11 @@ paymentRouter.post(
   "/payments/heleket/create",
   authJwt,
   asyncHandler(async (req: any, res: any) => {
-    const { planId, amount } = req.body;
-    if (!planId || !amount)
-      return res.status(400).json({ error: "planId and amount are required" });
+    const { planId } = req.body;
+    if (!planId)
+      return res.status(400).json({ error: "planId is required" });
 
-    const { url, orderId } = await createInvoice(req.userId, planId, amount);
+    const { url, orderId } = await createInvoice(req.userId, planId);
     return res.json({ url, orderId });
   }),
 );

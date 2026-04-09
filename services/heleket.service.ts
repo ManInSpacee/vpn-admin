@@ -24,17 +24,12 @@ export function verifyWebhookSign(payload: Record<string, any>): boolean {
   return sign === expected;
 }
 
-export async function createInvoice(
-  userId: string,
-  planId: string,
-  amount: number,
-) {
+export async function createInvoice(userId: string, planId: string) {
   const orderId = crypto.randomUUID().replace(/-/g, "");
 
-  // Сохраняем pending платёж до отправки в Heleket
-  // чтобы в вебхуке найти userId и planId по orderId
   const plan = await prisma.plan.findUnique({ where: { id: planId } });
   if (!plan) throw new Error("Plan not found");
+  if (!plan.priceUsd) throw new Error("Plan has no USD price configured");
 
   const userPlan = await prisma.userPlan.create({
     data: {
@@ -50,20 +45,21 @@ export async function createInvoice(
     data: {
       userId,
       userPlanId: userPlan.id,
-      amount,
+      amount: plan.priceUsd,
       status: "pending",
       provider: "heleket",
       providerId: orderId,
     },
   });
 
+  const amountUsd = (plan.priceUsd / 100).toFixed(2);
   const body = {
-    amount: amount.toString(),
+    amount: amountUsd,
     currency: "USDT",
     order_id: orderId,
-    url_return: "https://lk.openworldlink.ru/payment/failed",
-    url_success: "https://lk.openworldlink.ru/payment/success",
-    url_callback: "https://api.openworldlink.ru/payments/heleket/webhook",
+    url_return: "https://lk.owwllk2026mega.fit/payment/failed",
+    url_success: "https://lk.owwllk2026mega.fit/payment/success",
+    url_callback: "https://api.owwllk2026mega.fit/payments/heleket/webhook",
   };
 
   const res = await axios.post(`${HELEKET_API}/payment`, body, {

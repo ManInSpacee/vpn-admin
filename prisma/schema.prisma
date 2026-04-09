@@ -125,6 +125,7 @@ model Plan {
   name      String
   duration  Int
   price     Int
+  priceUsd  Int?
   slots     Int
   active    Boolean    @default(true)
   userPlans UserPlan[]

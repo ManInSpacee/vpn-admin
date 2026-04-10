@@ -14,12 +14,11 @@ function makeSign(body: object): string {
 
 export function verifyWebhookSign(payload: Record<string, any>): boolean {
   const { sign, ...data } = payload;
+  // Heleket считает подпись с экранированными слешами (как PHP json_encode)
+  const json = JSON.stringify(data).replace(/\//g, "\\/");
   const expected = crypto
     .createHash("md5")
-    .update(
-      Buffer.from(JSON.stringify(data)).toString("base64") +
-        process.env.HELEKET_API_KEY!,
-    )
+    .update(Buffer.from(json).toString("base64") + process.env.HELEKET_API_KEY!)
     .digest("hex");
   return sign === expected;
 }

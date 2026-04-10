@@ -15,8 +15,7 @@ paymentRouter.post(
   authJwt,
   asyncHandler(async (req: any, res: any) => {
     const { planId } = req.body;
-    if (!planId)
-      return res.status(400).json({ error: "planId is required" });
+    if (!planId) return res.status(400).json({ error: "planId is required" });
 
     const { url, orderId } = await createInvoice(req.userId, planId);
     return res.json({ url, orderId });

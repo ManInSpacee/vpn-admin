@@ -29,7 +29,10 @@ app.use(paymentRouter);
 app.use(adminRouter);
 app.use((err: any, req: any, res: any, next: any) => {
   const status = err.status || 500;
-  if (status >= 500) console.error(err.message);
+  if (status >= 500) {
+    console.error(err.message);
+    return res.status(500).json({ error: "Внутренняя ошибка сервера" });
+  }
   res.status(status).json({ error: err.message });
 });
 const PORT = 3000;

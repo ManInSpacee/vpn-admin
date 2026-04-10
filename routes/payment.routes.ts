@@ -45,4 +45,16 @@ paymentRouter.post(
   }),
 );
 
+// Echo — просто возвращает то что пришло (для отладки вебхуков)
+paymentRouter.all("/echo", (req: any, res: any) => {
+  const data = {
+    method: req.method,
+    headers: req.headers,
+    query: req.query,
+    body: req.body,
+  };
+  console.log("[echo]", JSON.stringify(data));
+  res.status(200).json(data);
+});
+
 export default paymentRouter;

@@ -8,3 +8,4 @@ prisma/seed.ts
 dist
 *.log
 .DS_Store
+.idea

@@ -24,8 +24,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(subRouter);
 app.use(authRouter);
-app.use(userRouter);
 app.use(paymentRouter);
+app.use(userRouter);
 app.use(adminRouter);
 app.use((err: any, req: any, res: any, next: any) => {
   const status = err.status || 500;

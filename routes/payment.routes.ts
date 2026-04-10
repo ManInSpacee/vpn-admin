@@ -28,12 +28,17 @@ paymentRouter.post(
   "/payments/heleket/webhook",
   asyncHandler(async (req: any, res: any) => {
     const payload = req.body;
+    console.log("[heleket webhook]", JSON.stringify(payload));
 
-    if (!verifyWebhookSign(payload))
+    if (!verifyWebhookSign(payload)) {
+      console.log("[heleket webhook] invalid signature");
       return res.status(400).json({ error: "Invalid signature" });
+    }
 
-    if (payload.status !== "paid")
-      return res.status(200).json({ ok: true }); // игнорируем не-paid статусы
+    if (payload.status !== "paid") {
+      console.log("[heleket webhook] status not paid:", payload.status);
+      return res.status(200).json({ ok: true });
+    }
 
     await activateSubscription(payload.order_id);
 

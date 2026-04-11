@@ -3,8 +3,11 @@ import {
   loginUser,
   refreshTokens,
   registerUser,
+  verifyCode,
+  resendCode,
 } from "../services/auth.service.js";
 import { asyncHandler } from "../utils/helpers.js";
+import { auth } from "../middleware/auth.js";
 
 const authRouter = Router();
 
@@ -13,6 +16,21 @@ authRouter.post(
   asyncHandler(async (req: any, res: any) => {
     const user = await registerUser(req.body.email, req.body.password);
     res.status(201).json({ user });
+  }),
+);
+authRouter.post(
+  "/auth/verify-code",
+  asyncHandler(async (req: any, res: any) => {
+    await verifyCode(req.body.email, req.body.code);
+    res.status(200).json({ok: true});
+  }),
+);
+
+authRouter.post(
+  "/auth/resend-code",
+  asyncHandler(async (req: any, res: any) => {
+    await resendCode(req.body.email);
+    res.status(200).json({ok: true});
   }),
 );
 

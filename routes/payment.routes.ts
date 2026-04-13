@@ -4,8 +4,8 @@ import { asyncHandler } from "../utils/helpers.js";
 import {
   createInvoice,
   verifyWebhookSign,
-  activateSubscription,
 } from "../services/heleket.service.js";
+import { activateSubscription } from "../services/sub.service.js";
 
 const paymentRouter = Router();
 
@@ -39,7 +39,7 @@ paymentRouter.post(
       return res.status(200).json({ ok: true });
     }
 
-    await activateSubscription(payload.order_id);
+    await activateSubscription(payload.order_id, "heleket");
 
     return res.status(200).json({ ok: true });
   }),

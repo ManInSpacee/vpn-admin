@@ -21,8 +21,12 @@ userRouter.get(
     res.status(200).json({
       email: user?.email,
       createdAt: user?.createdAt,
+      role: user?.role,
       plan: activePlan
-        ? { active: activePlan.plan.active, expiresAt: activePlan.expiresAt }
+        ? {
+            active: activePlan.plan.active,
+            expiresAt: activePlan.expiresAt,
+          }
         : null,
     });
   }),

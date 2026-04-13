@@ -56,9 +56,9 @@ export async function createInvoice(userId: string, planId: string) {
     amount: amountUsd,
     currency: "USDT",
     order_id: orderId,
-    url_return: "https://lk.owwllk2026mega.fit/payment/failed",
-    url_success: "https://lk.owwllk2026mega.fit/payment/success",
-    url_callback: "https://api.owwllk2026mega.fit/payments/heleket/webhook",
+    url_return: "https://lk.openworldlink.ru/payment/failed",
+    url_success: "https://lk.openworldlink.ru/payment/success",
+    url_callback: "https://api.openworldlink.ru/payments/heleket/webhook",
   };
 
   const res = await axios.post(`${HELEKET_API}/payment`, body, {

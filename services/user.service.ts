@@ -116,6 +116,14 @@ export async function deleteProfile(userId: string, profileId: string) {
   });
 }
 
+function countryCodeToFlag(code: string): string {
+  return code
+    .toUpperCase()
+    .split("")
+    .map((char) => String.fromCodePoint(0x1f1e6 + char.charCodeAt(0) - 65))
+    .join("");
+}
+
 export async function getSubscription(token: string) {
   const profile = await prisma.vpnProfile.findFirst({
     where: { subscriptionToken: token },
@@ -131,25 +139,27 @@ export async function getSubscription(token: string) {
   for (const link of profile.serverLinks) {
     const subLink = await axios.get(
       link.server.xuiSubUrl + "/sub/" + link.subId,
-      {
-        httpsAgent,
-      },
+      { httpsAgent },
     );
     const decoded = Buffer.from(subLink.data, "base64").toString("utf-8");
+
+    // флаг + название сервера
+    const flag = link.server.country
+      ? countryCodeToFlag(link.server.country)
+      : "";
+    const serverName = encodeURIComponent(flag + " " + link.server.name);
+
     const lines = decoded
       .split("\n")
       .filter(Boolean)
       .map((line) => {
         const hashIndex = line.lastIndexOf("#");
-        if (hashIndex === -1)
-          return line + "#" + encodeURIComponent(link.server.name);
-        return (
-          line.substring(0, hashIndex + 1) +
-          encodeURIComponent(link.server.name)
-        );
+        if (hashIndex === -1) return line + "#" + serverName;
+        return line.substring(0, hashIndex + 1) + serverName;
       });
     links.push(...lines);
   }
+
   const finalLink = Buffer.from(links.join("\n")).toString("base64");
   return finalLink;
 }

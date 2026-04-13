@@ -2,15 +2,26 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
 import { Prisma } from "../generated/prisma/client.js";
-import { sendVerificationEmail } from "./email.service.js";
+import axios from "axios";
+// EMAIL VERIFICATION — временно отключено, ждём верификацию домена в Mandrill
+// import { sendVerificationEmail } from "./email.service.js";
+// interface PendingRegistration {
+//   code: string;
+//   passwordHash: string;
+//   expiresAt: Date;
+//   sentAt: Date;
+// }
+// const pendingRegistrations = new Map<string, PendingRegistration>();
 
-interface PendingRegistration {
-  code: string;
-  passwordHash: string;
-  expiresAt: Date;
-  sentAt: Date;
+async function verifyCaptcha(token: string): Promise<void> {
+  const res = await axios.post(
+    `https://www.google.com/recaptcha/api/siteverify`,
+    null,
+    { params: {secret: process.env.RECAPTCHA_SECRET_KEY, response: token } }
+  );
+  if (!res.data.success)
+    throw Object.assign(new Error("Капча не пройдена"), { status: 400 });
 }
-const pendingRegistrations = new Map<string, PendingRegistration>();
 
 function validateEmail(email: string): void {
   if (!email) throw Object.assign(new Error("Введите email"), { status: 400 });
@@ -28,66 +39,55 @@ function validatePassword(password: string): void {
     throw Object.assign(new Error("Нужен хотя бы один спецсимвол"), { status: 400 });
 }
 
-export async function registerUser(email: string, password: string) {
+export async function registerUser(email: string, password: string, captchaToken: string) {
+  await verifyCaptcha(captchaToken);
   validateEmail(email);
   validatePassword(password);
-  
-  const existing = await prisma.user.findUnique({ where: {email}});
-  if (existing) throw Object.assign(new Error("Email уже занят"), {status: 409});
- 
-  const passwordHash = await bcrypt.hash(password, 10);
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const now = new Date();
 
-  pendingRegistrations.set(email, {
-    code,
-    passwordHash,
-    expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
-    sentAt: now,
-  });
-
-  console.log(`[DEBUG] verify code for ${email}: ${code}`);
+  const hashPassword = await bcrypt.hash(password, 10);
   try {
-    await sendVerificationEmail(email, code);
+    const user = await prisma.user.create({
+      data: { email, password_hash: hashPassword },
+    });
+    return user;
   } catch (err) {
-    console.error("[email] failed to send:", err);
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      throw Object.assign(new Error("Email уже занят"), { status: 409 });
+    }
+    throw err;
   }
 }
 
-export async function verifyCode(email: string, code: string) {
-  const pending = pendingRegistrations.get(email);
-  if (!pending || pending.code !== code || new Date() > pending.expiresAt)
-    throw Object.assign(new Error("Неверный код"), {status: 400});
+// EMAIL VERIFICATION — временно отключено, ждём верификацию домена в Mandrill
+// export async function verifyCode(email: string, code: string) {
+//   const pending = pendingRegistrations.get(email);
+//   if (!pending || pending.code !== code || new Date() > pending.expiresAt)
+//     throw Object.assign(new Error("Неверный код"), {status: 400});
+//   const user = await prisma.user.create({
+//     data: { email, password_hash: pending.passwordHash },
+//   });
+//   pendingRegistrations.delete(email);
+//   return user;
+// }
 
-  const user = await prisma.user.create({
-    data: { email, password_hash: pending.passwordHash },
-  });
-
-  pendingRegistrations.delete(email);
-  return user;
-}
-
-export async function resendCode(email: string) {
-  const pending = pendingRegistrations.get(email);
-  if (pending) {
-    const cooldown = 90 * 1000;
-    const secondsLeft = Math.ceil((cooldown - (new Date().getTime() - pending.sentAt.getTime())) / 1000);
-    if(new Date().getTime() - pending.sentAt.getTime() < cooldown)
-      throw Object.assign(new Error(`Подождите ${secondsLeft} секунд`), {status: 429});
-  }
-
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const now = new Date();
-
-  pendingRegistrations.set(email, {
-    code,
-    passwordHash: pending?.passwordHash ?? "",
-    expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
-    sentAt: now,
-  });
-
-  await sendVerificationEmail(email, code);
-}
+// export async function resendCode(email: string) {
+//   const pending = pendingRegistrations.get(email);
+//   if (pending) {
+//     const cooldown = 90 * 1000;
+//     const secondsLeft = Math.ceil((cooldown - (new Date().getTime() - pending.sentAt.getTime())) / 1000);
+//     if (new Date().getTime() - pending.sentAt.getTime() < cooldown)
+//       throw Object.assign(new Error(`Подождите ${secondsLeft} секунд`), { status: 429 });
+//   }
+//   const code = Math.floor(100000 + Math.random() * 900000).toString();
+//   const now = new Date();
+//   pendingRegistrations.set(email, {
+//     code,
+//     passwordHash: pending?.passwordHash ?? "",
+//     expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
+//     sentAt: now,
+//   });
+//   await sendVerificationEmail(email, code);
+// }
 
 export async function loginUser(email: string, password: string) {
   const currentUser = await prisma.user.findUnique({

@@ -2,9 +2,13 @@ import { Router } from "express";
 import authJwt from "../middleware/authJwt.js";
 import { asyncHandler } from "../utils/helpers.js";
 import {
-  createInvoice,
-  verifyWebhookSign,
+  createHeleketInvoice,
+  verifyHeleketWebhookSign,
 } from "../services/heleket.service.js";
+import {
+  createFreekassaInvoice,
+  verifyFreekassaWebhookSign,
+} from "../services/freekassa.service.js";
 import { activateSubscription } from "../services/sub.service.js";
 
 const paymentRouter = Router();
@@ -17,7 +21,7 @@ paymentRouter.post(
     const { planId } = req.body;
     if (!planId) return res.status(400).json({ error: "planId is required" });
 
-    const { url, orderId } = await createInvoice(req.userId, planId);
+    const { url, orderId } = await createHeleketInvoice(req.userId, planId);
     return res.json({ url, orderId });
   }),
 );
@@ -29,7 +33,7 @@ paymentRouter.post(
     const payload = req.body;
     console.log("[heleket webhook]", JSON.stringify(payload));
 
-    if (!verifyWebhookSign(payload)) {
+    if (!verifyHeleketWebhookSign(payload)) {
       console.log("[heleket webhook] invalid signature");
       return res.status(400).json({ error: "Invalid signature" });
     }
@@ -40,6 +44,41 @@ paymentRouter.post(
     }
 
     await activateSubscription(payload.order_id, "heleket");
+
+    return res.status(200).json({ ok: true });
+  }),
+);
+
+paymentRouter.post(
+  "/payments/freekassa/create",
+  authJwt,
+  asyncHandler(async (req: any, res: any) => {
+    const { planId } = req.body;
+    if (!planId) return res.status(400).json({ error: "planId is required" });
+
+    const ip = (req.headers["x-real-ip"] as string) || req.ip;
+
+    const { url, orderId } = await createFreekassaInvoice(
+      req.userId,
+      planId,
+      ip,
+    );
+    return res.json({ url, orderId });
+  }),
+);
+
+paymentRouter.post(
+  "/payments/freekassa/webhook",
+  asyncHandler(async (req: any, res: any) => {
+    const payload = req.body;
+    console.log("[freekassa webhook]", JSON.stringify(payload));
+
+    if (!verifyFreekassaWebhookSign(payload)) {
+      console.log("[frekassa webhook] invalid signature");
+      return res.status(400).json({ error: "Invalid signature" });
+    }
+
+    await activateSubscription(payload.MERCHANT_ORDER_ID, "freekassa");
 
     return res.status(200).json({ ok: true });
   }),

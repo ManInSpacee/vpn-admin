@@ -12,7 +12,9 @@ function makeSign(body: object): string {
     .digest("hex");
 }
 
-export function verifyWebhookSign(payload: Record<string, any>): boolean {
+export function verifyHeleketWebhookSign(
+  payload: Record<string, any>,
+): boolean {
   const { sign, ...data } = payload;
   // Heleket считает подпись с экранированными слешами (как PHP json_encode)
   const json = JSON.stringify(data).replace(/\//g, "\\/");
@@ -23,7 +25,7 @@ export function verifyWebhookSign(payload: Record<string, any>): boolean {
   return sign === expected;
 }
 
-export async function createInvoice(userId: string, planId: string) {
+export async function createHeleketInvoice(userId: string, planId: string) {
   const orderId = crypto.randomUUID().replace(/-/g, "");
 
   const plan = await prisma.plan.findUnique({ where: { id: planId } });
